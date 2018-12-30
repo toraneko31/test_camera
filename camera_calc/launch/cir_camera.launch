@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+
+
+  <node pkg = "camera_ope_opencv" name="circle_point1" type="circle_point1"/>
+  <node pkg = "camera_ope_opencv" name="circle_point2" type="circle_point2"/>
+  <!--<node pkg = "camera_calc" name="camera_distance" type="camera_distance"/>
+-->
+</launch>

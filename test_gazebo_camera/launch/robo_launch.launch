@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+
+
+<launch>
+
+  <include file="$(find test_gazebo_camera)/launch/robo_gazebo.launch"/>
+  <include file="$(find test_gazebo_camera)/launch/robo_camera.launch"/>
+  <include file="$(find test_gazebo_camera)/launch/robo_control.launch"/>
+</launch>

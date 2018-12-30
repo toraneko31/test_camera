@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<robot>
+  <gazebo reference = "link1">
+    <mu1>0.0</mu1>
+    <mu2>0.0</mu2>
+    <material>Gazebo/White</material>
+  </gazebo>
+</robot>

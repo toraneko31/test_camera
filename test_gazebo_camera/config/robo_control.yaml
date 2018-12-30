@@ -1,0 +1,12 @@
+robo:
+  # Publish all joint states -----------------------------------
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 50  
+  
+  # Position Controllers ---------------------------------------
+  wjoint_position_controller:
+    type: effort_controllers/JointPositionController
+    joint: wjoint
+    pid: {p: 0.01, i: 0.01, d: 0.01}
+
