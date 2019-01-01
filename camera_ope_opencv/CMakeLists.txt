@@ -224,4 +224,20 @@ add_executable(circle_point2 src/circle_center2.cpp)
 target_link_libraries(circle_point2
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES})
+add_executable(contour_point1 src/contours_center1.cpp)
+target_link_libraries(contour_point1
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES})
+add_executable(contour_point2 src/contours_center2.cpp)
+target_link_libraries(contour_point2
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES})
+
+
+
+
+add_executable(colorEx src/colorEx.cpp)
+target_link_libraries(colorEx
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES})
 

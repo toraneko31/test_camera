@@ -23,26 +23,22 @@ public:
   ImageConverter()
     :it(nh)
     {
-      //image_sub = it.subscribe("/my_robo/camera1/image_raw",1,&ImageConverter::imageCb,this);
-      image_sub = it.subscribe("/robo/camera1/image_raw",1,&ImageConverter::imageCb,this);
- 
-      image_pub = it.advertise("/circle_point1/output_video", 1);
+      //image_sub = it.subscribe("/my_robo/camera2/image_raw",1,&ImageConverter::imageCb,this);
+      image_sub = it.subscribe("/robo/camera2/image_raw",1,&ImageConverter::imageCb,this);
+      image_pub = it.advertise("/contour_point2/output_video", 1);
       //point_pub = it.advertise<std_msgs::Int32MultiArray>("/center_point",10);
-      point_pub = nh.advertise<std_msgs::Int32MultiArray>("/center_point1",10);
-      image_centor = nh.advertise<std_msgs::Int32MultiArray>("/image_centor1",10);
-
-
-
-      //cv::namedWindow("image1");
-      cv::namedWindow("red1");
-      cv::namedWindow("circle1");
+      point_pub = nh.advertise<std_msgs::Int32MultiArray>("/contour_point2",10);
+      image_centor = nh.advertise<std_msgs::Int32MultiArray>("/image_centor2",10);
+      //cv::namedWindow("image2");
+      cv::namedWindow("red2");
+      cv::namedWindow("circle2");
     }
 
     ~ImageConverter()
     {
-      //cv::destroyWindow("image1");
-      cv::namedWindow("red1");
-      cv::destroyWindow("circle1");
+      //cv::destroyWindow("image2");
+      cv::namedWindow("red2");
+      cv::destroyWindow("circle2");
     }
 
     void imageCb(const sensor_msgs::ImageConstPtr& msg){
@@ -61,6 +57,7 @@ public:
       cv::Mat circle_image,hsv_image,gray_image,gray_image2;
       circle_image = cv_image.clone();
 
+      
       cv::cvtColor(cv_image,hsv_image,CV_BGR2HSV);
       cv::Mat channels[3];
       cv::split(hsv_image,channels);
@@ -78,57 +75,63 @@ public:
           if((hue < 8 || hue > 168) && sat > 100)red.at<uchar>(y,x) = 0;
           else red.at<uchar>(y,x) = 255;
         }
+      } 
+
+      cv::imshow("red2",red);
+      red = ~red;
+
+     //contours
+      std::vector< std::vector<cv::Point> > contours;
+      std::vector<cv::Vec4i> hier;
+      cv::findContours(red,contours,hier,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+ 
+      if(contours.size() != 0){
+      //contours_area MAX
+      double max_area = 0;
+      int m_a_contour = -1;
+      for(int j=0;j < contours.size();j++){
+        double area= cv::contourArea(contours.at(j));
+        if(max_area < area){
+          max_area = area;
+          m_a_contour = j;
+        }
       }
-      cv::imshow("red1",red);
-      //cv::cvtColor(red,gray_image,CV_BGR2GRAY); 
-      cv::GaussianBlur(red,gray_image2,cv::Size(11,11),0,0);
-     
-      std::vector<cv::Vec3f> storage;
-      cv::HoughCircles(gray_image2,storage,CV_HOUGH_GRADIENT,1,50,100,50);
-      
-      std::vector<cv::Vec3f>::iterator it = storage.begin();
+ 
+      cv::Point2f center;
+      float radius;
+      cv::minEnclosingCircle(cv::Mat(contours.at(m_a_contour)).reshape(2), center, radius);
+      cv::circle(circle_image,center,radius,cv::Scalar(100,100,200), 2, CV_AA);
+ 
+ 
       std_msgs::Int32MultiArray point;
       std_msgs::Int32MultiArray image_cen;
       point.data.clear();
       image_cen.data.clear();
-
-      int cx[100];
-      int cy[100];
+ 
+      int cx = center.x;
+      int cy = center.y;
       int count = 0;
       point.data.push_back(1);
-
+ 
       image_cen.data.push_back(cv_image.size().width/2);
       image_cen.data.push_back(cv_image.size().height/2);
+      point.data.push_back(cx);
+      point.data.push_back(cy);
+ 
 
-      for(;it!=storage.end();++it){
-        cv::Point center(cv::saturate_cast<int>((*it)[0]), cv::saturate_cast<int>((*it)[1]));
-        int radius = cv::saturate_cast<int>((*it)[2]);
-        cx[count] = cv::saturate_cast<int>((*it)[0]);
-        cy[count] = cv::saturate_cast<int>((*it)[1]);
-        //std::cout << "cx =" << cx[count];
-        //std::cout << ": cy =" << cy[count] << std::endl << std::endl;
-        if(count == 0){
-          point.data.push_back(cx[count]);
-          point.data.push_back(cy[count]);
-        }
-        count++;
-
-        cv::circle(circle_image, center, radius, cv::Scalar(0,0,255), 2);
-      }
-
-     // cv::imshow("image1",cv_image);
-      cv::imshow("circle1",circle_image);
-
-      cv::waitKey(3);
-
+      //cv::imshow("image2",cv_image);
+      cv::imshow("circle2",circle_image);
       image_pub.publish(cv_ptr->toImageMsg());
       point_pub.publish(point);
       image_centor.publish(image_cen);
-    }
+      }
+      cv::waitKey(3);
+
+   }
   };
 
   int main(int argc,char **argv){
-    ros::init(argc,argv,"circle_point1");
+    ros::init(argc,argv,"contour_point2");
     ImageConverter ic;
     ros::spin();
     return 0;

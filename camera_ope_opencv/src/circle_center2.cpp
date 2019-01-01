@@ -30,12 +30,14 @@ public:
       point_pub = nh.advertise<std_msgs::Int32MultiArray>("/center_point2",10);
       image_centor = nh.advertise<std_msgs::Int32MultiArray>("/image_centor2",10);
       //cv::namedWindow("image2");
+      cv::namedWindow("red2");
       cv::namedWindow("circle2");
     }
 
     ~ImageConverter()
     {
       //cv::destroyWindow("image2");
+      cv::namedWindow("red2");
       cv::destroyWindow("circle2");
     }
 
@@ -52,14 +54,35 @@ public:
       }
 
       cv::Mat cv_image = cv_ptr->image;
-      cv::Mat circle_image,gray_image,gray_image2;
+      cv::Mat circle_image,hsv_image,gray_image,gray_image2;
       circle_image = cv_image.clone();
 
-      cv::cvtColor(cv_image,gray_image,CV_BGR2GRAY); 
-      cv::GaussianBlur(gray_image,gray_image2,cv::Size(11,11),0,0);
+      
+      cv::cvtColor(cv_image,hsv_image,CV_BGR2HSV);
+      cv::Mat channels[3];
+      cv::split(hsv_image,channels);
+ 
+      int width = cv_image.cols;
+      int height = cv_image.rows;
+ 
+      cv::Mat red = cv::Mat(cv::Size(width,height),CV_8UC1);
+      uchar hue,sat;
+ 
+      for(int y = 0;y < height;y++){
+        for(int x = 0;x < width;x++){
+          hue = channels[0].at<uchar>(y,x);
+          sat = channels[1].at<uchar>(y,x);
+          if((hue < 8 || hue > 168) && sat > 100)red.at<uchar>(y,x) = 0;
+          else red.at<uchar>(y,x) = 255;
+        }
+      } 
+
+      cv::imshow("red2",red);
+      //cv::cvtColor(red,gray_image,CV_BGR2GRAY); 
+      cv::GaussianBlur(red,gray_image2,cv::Size(11,11),0,0);
 
       std::vector<cv::Vec3f> storage;
-      cv::HoughCircles(gray_image2,storage,CV_HOUGH_GRADIENT,1,50,100,30);
+      cv::HoughCircles(gray_image2,storage,CV_HOUGH_GRADIENT,1,50,100,50);
       
       std::vector<cv::Vec3f>::iterator it = storage.begin();
       std_msgs::Int32MultiArray point;
@@ -83,10 +106,10 @@ public:
         cy[count] = cv::saturate_cast<int>((*it)[1]);
         //std::cout << "cx =" << cx[count];
         //std::cout << ": cy =" << cy[count] << std::endl << std::endl;
-
-        point.data.push_back(cx[count]);
-        point.data.push_back(cy[count]);
-
+        if(count == 0){
+          point.data.push_back(cx[count]);
+          point.data.push_back(cy[count]);
+        }
         count++;
 
         cv::circle(circle_image, center, radius, cv::Scalar(0,0,255), 2);
